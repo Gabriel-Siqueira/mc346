@@ -69,10 +69,15 @@ deleteBigger y end_Map = Map.difference end_Map (snd $ Map.split y end_Map)
 findPlace :: Y -> (Area,[Id]) -> Map.Map Y (Area,[Id]) -> Map.Map Y (Area, [Id])
 findPlace y value end_Map = 
   if lower_bound < value
-     then Map.insertWith max y value end_Map
+     then Map.insertWith max y value new_end_Map
      else end_Map
   where 
     smalls = fst $ Map.split y end_Map
     lower_bound = if smalls == Map.empty
                   then (0,[])
                   else snd . Map.findMax $ smalls
+    new_end_Map = Map.differenceWith
+      (\a b -> if fst a > fst value
+                then Just a
+                else Nothing)
+       end_Map (snd $ Map.split y end_Map)
