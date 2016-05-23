@@ -50,13 +50,29 @@ process begin_Map end_Map answer ((Rectangle (x1,y1) ori (x2,y2) id):xs) =
     -- new_end_Map = novo mapa end_Map (se ori = End).
     -- new_answer = novo valor de answer (se ori = End).
     (new_end_Map, new_answer)
-      | fst value > (fst.fst) answer =
+      | fst value > (fst.fst) answer && y1 >= snd answer =
           (Map.insertWith max y1 value end_Map, (value, y1))
-      | fst value < (fst.fst) answer && y1 >= snd answer =
-          (Map.insertWith max (snd answer) (fst answer) end_Map, answer)
+      | fst value >= (fst.fst) answer && y1 < snd answer =
+          (Map.insertWith max y1 value (deleteBigger y1 end_Map), (value, y1))
+      | fst value <= (fst.fst) answer && y1 >= snd answer =
+          (end_Map, answer)
       | fst value < (fst.fst) answer && y1 < snd answer =
-          (Map.insertWith max y1 value end_Map, answer)
-      | fst value == (fst.fst) answer && y1 >= snd answer =
-          (Map.insertWith max (snd answer) (fst answer) end_Map, answer)
-      | fst value == (fst.fst) answer && y1 < snd answer =
-          (Map.insertWith max y1 value end_Map, (value, y1))
+          (findPlace y1 value end_Map, answer)
+
+-- deleteBigger: Recebe um mapa e um valor de y e elimina todos os elementos
+-- com chave maior que este valor do mapa.
+deleteBigger :: Y -> Map.Map Y (Area,[Id]) -> Map.Map Y (Area, [Id])
+deleteBigger y end_Map = Map.difference end_Map (snd $ Map.split y end_Map)
+
+-- findPlace: Recebe um mapa e um elemento (chave e valor) e verifica se é
+-- necessario inserir o elemento no mapa. 
+findPlace :: Y -> (Area,[Id]) -> Map.Map Y (Area,[Id]) -> Map.Map Y (Area, [Id])
+findPlace y value end_Map = 
+  if lower_bound < value
+     then Map.insertWith max y value end_Map
+     else end_Map
+  where 
+    smalls = fst $ Map.split y end_Map
+    lower_bound = if smalls == Map.empty
+                  then (0,[])
+                  else snd . Map.findMax $ smalls
